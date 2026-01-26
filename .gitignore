@@ -1,3 +1,108 @@
+# ==============================
+# Binary / non-code data files
+# ==============================
+
+# Images / rasters
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.tif
+*.tiff
+*.bmp
+*.svg
+*.webp
+
+# GIS / spatial
+*.shp
+*.dbf
+*.shx
+*.prj
+*.cpg
+*.gpkg
+*.geojson
+*.vrt
+
+# Tabular data
+*.csv
+*.tsv
+*.xls
+*.xlsx
+*.ods
+*.parquet
+*.feather
+*.fst
+
+# Serialized / model objects
+*.rds
+*.RDS
+*.qs
+*.fst
+*.sav
+*.pkl
+
+# Documents / slides
+*.pdf
+*.doc
+*.docx
+*.ppt
+*.pptx
+
+# Web / rendered artifacts
+*.html
+*.css
+*.js
+*.map
+*.woff*
+*.eot
+*.ttf
+
+# Archives / compressed
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+*.rar
+
+# ==============================
+# Large outputs / scratch dirs
+# ==============================
+data/
+Data_raw/
+Data_processed/
+outputs/
+output/
+results/
+figures/
+Figures/
+cache/
+tmp/
+temp/
+
+# ==============================
+# Safety: allow code + docs back in
+# ==============================
+!*.R
+!*.Rmd
+!*.qmd
+!*.md
+!*.yml
+!*.yaml
+!*.toml
+!*.json
+!*.txt
+!*.gitignore
+!*.gitattributes
+!DESCRIPTION
+!NAMESPACE
+!LICENSE*
+!README*
+
+# boilerplate r gitignore: 
+
+
+
 # History files
 .Rhistory
 .Rapp.history
@@ -48,48 +153,3 @@ po/*~
 
 # RStudio Connect folder
 rsconnect/
-
-# data files
-data/
-Data_processed/
-Data_raw/
-Figures/
-
-# model comparison html
-./Analysis/VegComposition/ModelFitting/03_CompareModels.html
-/Analysis/VegComposition/ModelFitting/03_CompareModels.html
-
-# old versions of markdown htmls
-./Analysis/VegComposition/ModelFitting/outputHtmls/v1/
-./Analysis/VegComposition/ModelFitting/outputHtmls/v2/
-./Analysis/VegComposition/ModelFitting/outputHtmls/v3/
-
-./Analysis/BiomassQuantity/Analysis/modelRunMarkdowns/v1/
-/Analysis/VegComposition/ModelFitting/outputHtmls/v1/
-/Analysis/VegComposition/ModelFitting/outputHtmls/v2/
-/Analysis/VegComposition/ModelFitting/outputHtmls/v3/
-/Analysis/BiomassQuantity/Analysis/modelRunMarkdowns/v1/
-
-# model output files
-/Analysis/BiomassQuantity/Analysis/models/
-./Analysis/BiomassQuantity/Analysis/models/
-/Analysis/ecoregionClassification/ModelFitting/ModelObjects/
-./Analysis/ecoregionClassification/ModelFitting/ModelObjects/
-./Analysis/VegComposition/ModelFitting/models/
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_C3GramCover_n50000.RDS
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_C4GramCover_n50000.RDS
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_ConifCover_n50000.RDS
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_HerbCover_n50000.RDS
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_ShrubCover_n50000.RDS
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_TotalGramCover_n50000.RDS
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_TotalTreeCover_n50000.RDS
-./Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_TotalTreeCover_n40000.RDS
-/Analysis/VegComposition/ModelFitting/models/
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_C3GramCover_n50000.RDS
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_C4GramCover_n50000.RDS
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_ConifCover_n50000.RDS
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_HerbCover_n50000.RDS
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_ShrubCover_n50000.RDS
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_TotalGramCover_n50000.RDS
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_TotalTreeCover_n50000.RDS
-/Analysis/VegComposition/ModelFitting/models/glm_beta_model_FirstPass_TotalTreeCover_n40000.RDAnalysis/VegComposition/ModelFitting/models/
