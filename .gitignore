@@ -1,0 +1,131 @@
+# ============================================================
+# Data & output directories (ignored wherever they appear)
+# ============================================================
+Data_raw/
+Data_processed/
+models/
+# add any other known data/output folder names here
+# ============================================================
+# R / RStudio
+# ============================================================
+.Rproj.user/
+.Rhistory
+.RData
+.Ruserdata
+.Rapp.history
+*.Rproj            # remove this line if you want to track the .Rproj
+*-Ex.R             # example scripts from R CMD check
+/*.tar.gz          # package build tarballs
+/*.Rcheck/
+.httr-oauth        # cached OAuth tokens (googledrive etc.)
+# ============================================================
+# renv (ignore the library cache, KEEP renv.lock tracked)
+# ============================================================
+renv/library/
+renv/local/
+renv/cellar/
+renv/python/
+renv/staging/
+# renv.lock is intentionally NOT ignored
+# ============================================================
+# R Markdown / Quarto rendered output (major bloat source)
+# ============================================================
+*.html
+*.knit.md
+*.utf8.md
+*_files/           # auto-created figure/asset folders
+*_cache/           # knitr cache
+/.quarto/
+# ============================================================
+# Data files (any location)
+# ============================================================
+*.rds
+*.RDS
+*.rda
+*.rdata
+*.RData
+*.csv
+*.tsv
+*.xlsx
+*.xls
+*.xlsm
+*.parquet
+*.feather
+*.nc               # NetCDF (SOLUS, climate)
+*.h5
+*.hdf5
+*.mat
+*.sqlite
+*.db
+*.png
+*.jpeg
+*.bmp
+# ============================================================
+# Rendered / binary documents (any location)
+# ============================================================
+*.pdf
+*.docx
+*.doc
+*.pptx
+*.ppt
+# ============================================================
+# Spatial / raster / GIS (any location)
+# ============================================================
+*.tif
+*.tiff
+*.vrt
+*.grd
+*.gri
+*.img
+*.asc
+*.hgt
+# Shapefile sidecar set
+*.shp
+*.shx
+*.dbf
+*.prj
+*.cpg
+*.sbn
+*.sbx
+*.qpj
+*.qmd.bak
+# Geopackage / geodatabase
+*.gpkg
+*.gdb/
+# ============================================================
+# Compiled code (TMB, Rcpp, C/C++/Fortran)
+# ============================================================
+*.o
+*.so
+*.dll
+*.a
+*.dylib
+*.rds.o
+# ============================================================
+# Archives / large binaries
+# ============================================================
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.gz
+*.7z
+*.bz2
+# ============================================================
+# Editor / OS
+# ============================================================
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+# ============================================================
+# Secrets / credentials — never commit
+# ============================================================
+.Renviron
+.env
+*_secret*
+*credentials*
+maps
