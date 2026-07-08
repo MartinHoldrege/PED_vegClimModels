@@ -23,6 +23,9 @@ source("./Functions/climate.R")
 
 # is this a test run? 
 test <- FALSE
+# should intermediate steps that already have saved output be recomputed?
+# if FALSE, existing intermediate files are read back in instead of recomputed
+rerun <- FALSE
 # do I need to download the data
 downloadRawData <- TRUE
 # set the size of the bins for the dayMet data
@@ -69,6 +72,12 @@ dayMet_points$sliceID <- rep(1:1000000, each = binSize, length.out = nrow(dayMet
 
 # now start a huge loop where we go through an iteration for each slice of the point data
 for (z in 1:length(unique(dayMet_points$sliceID))) {
+  # if this slice has already been fully processed, skip it (the combine step
+  # below reads the per-slice final files from disk, so no in-memory state is needed)
+  finalSliceFile <- paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/dayMetClimateValuesForAnalysis_final_slice", z, suffix, ".csv")
+  if (!rerun && file.exists(finalSliceFile)) {
+    next
+  }
   # subset the points into data for the current slice
   dayMet_points_z <- dayMet_points[dayMet_points$sliceID == z,]
   # Acquire weather data and calculate variables ----------------------------
@@ -718,25 +727,28 @@ gc()
 }
 
 # Now add data from different slices together  ---------------------------------
-# get file names 
-climDatNames <- list.files("./Data_processed/CoverData/dayMet_intermediate/WallToWall/", pattern = paste0("dayMetClimateValuesForAnalysis_final_slice.*", suffix))
-
-listOut <- apply(as.matrix(climDatNames), MARGIN = 1, FUN = function(x) {
-  # get data fore each slice and remove any data that aren't for 2023
- readRDS(paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/",x)) %>% 
-           filter(year == 2023)
-  #return(get(x))
-}) %>% 
-  purrr::list_rbind()
-
-# save for further analysis 
-listOut %>% 
-  select(-precip_driestMonth_meanAnnAvg_3yrAnom, -precip_driestMonth_meanAnnAvg_2yrAnom) %>% 
-  saveRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues", suffix, ".rds"))
+combinedFile <- paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues", suffix, ".rds")
+if (rerun || !file.exists(combinedFile)) {
+  # get file names 
+  climDatNames <- list.files("./Data_processed/CoverData/dayMet_intermediate/WallToWall/", pattern = paste0("dayMetClimateValuesForAnalysis_final_slice.*", suffix))
+  
+  listOut <- apply(as.matrix(climDatNames), MARGIN = 1, FUN = function(x) {
+    # get data fore each slice and remove any data that aren't for 2023
+   readRDS(paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/",x)) %>% 
+             filter(year == 2023)
+    #return(get(x))
+  }) %>% 
+    purrr::list_rbind()
+  
+  # save for further analysis 
+  saveRDS(listOut, combinedFile)
+}
 
 # save as a raster w/ layers for each variable ----------------------------
-listOut <- readRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues", suffix, ".rds"))
+listOut <- readRDS(combinedFile)
 
+rasterFile <- paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_raster", suffix, ".tif")
+if (rerun || !file.exists(rasterFile)) {
 # data averaged over 1992 to 2022 -- data used as predictors for cover data collected in 2023
 # turn into a raster 
 testOutVect <- listOut %>% 
@@ -780,7 +792,8 @@ terra::set.names(testOutRast_final, value = c("tmin_meanAnnAvg_CLIM"            
 )
 
 # save raster
-terra::writeRaster(x = testOutRast_final, filename = paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_raster", suffix, ".tif"))
+terra::writeRaster(x = testOutRast_final, filename = rasterFile)
+}
 
 
 # Add soils information --------------------------------------------------
@@ -1023,6 +1036,9 @@ temp <- readRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCON
 temp$clumpID <- rep_len(1:100, length.out = nrow(temp))
 temp$uniqueID <- 1:nrow(temp)
 vegSoils_new$uniqueID <- 1:nrow(vegSoils_new)
+
+intermediate2File <- paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE_2", suffix, ".rds")
+if (rerun || !file.exists(intermediate2File)) {
 for (i in 1:100) {
   temp_temp <- temp %>% 
     filter(clumpID == i)
@@ -1114,8 +1130,9 @@ for (i in 1:100) {
   }
 }
 
-saveRDS(outDF, paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE_2", suffix, ".rds"))
-outDF <- readRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE_2", suffix, ".rds"))
+  saveRDS(outDF, intermediate2File)
+}
+outDF <- readRDS(intermediate2File)
 
 vegSoils_new <- vegSoils_new %>% 
   left_join(outDF)
