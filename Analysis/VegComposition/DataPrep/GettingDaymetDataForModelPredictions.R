@@ -14,12 +14,21 @@ library(future.apply)
 library(parallel)
 library(USAboundaries)
 
+# Correct denominator for day-weighted monthly means (days/year ÷ 12)
+mean_days_per_month <- 365.25 / 12
+suffix <- "_v2"
+
+# svp() and vpd() functions
+source("./Functions/climate.R")
+
 # is this a test run? 
-test <- TRUE
+test <- FALSE
 # do I need to download the data
 downloadRawData <- TRUE
 # set the size of the bins for the dayMet data
 binSize <- 100000
+dir.create("./Data_processed/CoverData/dayMet_intermediate/WallToWall/", recursive = TRUE, showWarnings = FALSE)
+dir.create("./Data_processed/WallToWallClimateData/", recursive = TRUE, showWarnings = FALSE)
 # Get points for all locations in dayMet centroids ------------------------
 # raster w/ dayMet grid
 temp_rast <- rast(paste0("./Data_raw/dayMet/rawMonthlyData/orders/70e0da02b9d2d6e8faa8c97d211f3546/Daymet_Monthly_V4R1/data/daymet_v4_prcp_monttl_na_1980.tif"))
@@ -176,8 +185,8 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
 
     # save data
     if (!test) {
-      write.csv(allMetDat, file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_COVER_slice",z ,".csv"), row.names = FALSE)
-      #allMetDat <- read.csv("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_COVER.csv")
+      write.csv(allMetDat, file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_COVER_slice", z, suffix, ".csv"), row.names = FALSE)
+      #allMetDat <- read.csv(paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_COVER_slice",z ,".csv"))
     }
     
     # get annual climate data -------------------------------------------------
@@ -285,14 +294,14 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
     
     if (!test) {
       # save data
-      write.csv(annMetDat, file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_Annual_COVER_slice",z ,".csv"), row.names = FALSE)
-      #annMetDat <- read.csv("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_Annual_COVER.csv")
+      write.csv(annMetDat, file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_Annual_COVER_slice", z, suffix, ".csv"), row.names = FALSE)
+      #annMetDat <- read.csv(paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_Annual_COVER_slice",z ,".csv"))
     }
   } else {
     # download annual met data
-    annMetDat <- read.csv( file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_Annual_COVER_slice",z ,".csv"))
+    annMetDat <- read.csv( file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_Annual_COVER_slice",z, suffix, ".csv"))
     # download monthly met data
-    allMetDat <- read.csv( file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_COVER_slice",z ,".csv"))
+    allMetDat <- read.csv( file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/sampledDataForAnalysis_COVER_slice",z, suffix ,".csv"))
   }
   
   # add annual data to the monthly data (will use later in processing)
@@ -315,9 +324,12 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
            Tmin_annAvgOfMonthly = pmap_dbl(.[c("tmin_Jan", "tmin_Feb", "tmin_March", "tmin_April", "tmin_May", "tmin_June", "tmin_July", "tmin_Aug", "tmin_Sept", "tmin_Oct",  "tmin_Nov",  "tmin_Dec")],
                                            .f = function(tmin_Jan, tmin_Feb, tmin_March, tmin_April, tmin_May, tmin_June, tmin_July, tmin_Aug, tmin_Sept, tmin_Oct,  tmin_Nov,  tmin_Dec) {
                                              return(mean(c(
-                                               tmin_Jan * 31/31, tmin_Feb * 28.5/31, tmin_March * 31/31, tmin_April * 30/31,
-                                               tmin_May * 31/31, tmin_June * 30/31, tmin_July * 31/31, tmin_Aug * 31/31,
-                                               tmin_Sept * 30/31, tmin_Oct * 31/31,  tmin_Nov * 30/31,  tmin_Dec * 31/31
+                                               tmin_Jan * 31/mean_days_per_month, tmin_Feb * 28.25/mean_days_per_month,
+                                               tmin_March * 31/mean_days_per_month, tmin_April * 30/mean_days_per_month,
+                                               tmin_May * 31/mean_days_per_month, tmin_June * 30/mean_days_per_month,
+                                               tmin_July * 31/mean_days_per_month, tmin_Aug * 31/mean_days_per_month,
+                                               tmin_Sept * 30/mean_days_per_month, tmin_Oct * 31/mean_days_per_month,
+                                               tmin_Nov * 30/mean_days_per_month, tmin_Dec * 31/mean_days_per_month
                                              )
                                              )) # in degrees C
                                            }),
@@ -327,9 +339,12 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
            Tmax_annAvgOfMonthly = pmap_dbl(.[c("tmax_Jan", "tmax_Feb", "tmax_March", "tmax_April", "tmax_May", "tmax_June", "tmax_July", "tmax_Aug", "tmax_Sept", "tmax_Oct",  "tmax_Nov",  "tmax_Dec")],
                                            .f = function(tmax_Jan, tmax_Feb, tmax_March, tmax_April, tmax_May, tmax_June, tmax_July, tmax_Aug, tmax_Sept, tmax_Oct,  tmax_Nov,  tmax_Dec) {
                                              return(mean(c(
-                                               tmax_Jan * 31/31, tmax_Feb * 28.5/31, tmax_March * 31/31, tmax_April * 30/31,
-                                               tmax_May * 31/31, tmax_June * 30/31, tmax_July * 31/31, tmax_Aug * 31/31,
-                                               tmax_Sept * 30/31, tmax_Oct * 31/31,  tmax_Nov * 30/31,  tmax_Dec * 31/31
+                                               tmax_Jan * 31/mean_days_per_month, tmax_Feb * 28.25/mean_days_per_month,
+                                               tmax_March * 31/mean_days_per_month, tmax_April * 30/mean_days_per_month,
+                                               tmax_May * 31/mean_days_per_month, tmax_June * 30/mean_days_per_month,
+                                               tmax_July * 31/mean_days_per_month, tmax_Aug * 31/mean_days_per_month,
+                                               tmax_Sept * 30/mean_days_per_month, tmax_Oct * 31/mean_days_per_month,
+                                               tmax_Nov * 30/mean_days_per_month, tmax_Dec * 31/mean_days_per_month
                                              )
                                              )) # in degrees C
                                            }),
@@ -396,15 +411,6 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
                                 format = "%m/%d/%Y"))
     )
   
-  # constants for SVP calculation
-  #calculate SVP according to Williams et al NatCC 2012 supplementary material -  units haPa
-  a0<-6.107799961
-  a1<-0.4436518521
-  a2<-0.01428945805
-  a3<-0.0002650648471
-  a4<-0.000003031240396
-  a5<-0.00000002034080948
-  a6<-0.00000000006136820929
   ## calculating vapor pressure deficit, annual water deficit, and wet degree days (based on code from Adam Noel)
   
   climVar2 <- allMetDat2%>%
@@ -465,20 +471,20 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
       # VPD_Oct =   (6.11*exp((17.27*tmean_Oct)/(237.3 + tmean_Oct))) - (vp_Oct/100),
       # VPD_Nov =   (6.11*exp((17.27*tmean_Nov)/(237.3 + tmean_Nov))) - (vp_Nov/100),
       # VPD_Dec =   (6.11*exp((17.27*tmean_Dec)/(237.3 + tmean_Dec))) - (vp_Dec/100),
-      # second try for VPD (based on https://static-content.springer.com/esm/art%3A10.1038%2Fnclimate1693/MediaObjects/41558_2013_BFnclimate1693_MOESM272_ESM.pdf)
-      # units are Pascals
-      VPD_Jan = ((( a0+ tmean_Jan*(a1+ tmean_Jan *(a2+ tmean_Jan *(a3+ tmean_Jan *(a4	+ tmean_Jan *(a5	+ tmean_Jan *a6)))))))*100 -  (tmean_Jan))/1000,
-      VPD_Feb = ((( a0+ tmean_Feb*(a1+ tmean_Feb *(a2+ tmean_Feb *(a3+ tmean_Feb *(a4	+ tmean_Feb *(a5	+ tmean_Feb *a6)))))))*100 -  (tmean_Feb))/1000,
-      VPD_March = ((( a0+ tmean_March*(a1+ tmean_March *(a2+ tmean_March *(a3+ tmean_March *(a4	+ tmean_March *(a5	+ tmean_March *a6)))))))*100 -  (tmean_March))/1000,
-      VPD_April = ((( a0+ tmean_April*(a1+ tmean_April *(a2+ tmean_April *(a3+ tmean_April *(a4	+ tmean_April *(a5	+ tmean_April *a6)))))))*100 -  (tmean_April))/1000,
-      VPD_May =   ((( a0+ tmean_May*(a1+ tmean_May *(a2+ tmean_May *(a3+ tmean_May *(a4	+ tmean_May *(a5	+ tmean_May *a6)))))))*100 -  (tmean_May))/1000,
-      VPD_June =  ((( a0+ tmean_June*(a1+ tmean_June *(a2+ tmean_June *(a3+ tmean_June *(a4	+ tmean_June *(a5	+ tmean_June *a6)))))))*100 -  (tmean_June))/1000,
-      VPD_July =  ((( a0+ tmean_July*(a1+ tmean_July *(a2+ tmean_July *(a3+ tmean_July *(a4	+ tmean_July *(a5	+ tmean_July *a6)))))))*100 -  (tmean_July))/1000,
-      VPD_Aug =   ((( a0+ tmean_Aug*(a1+ tmean_Aug *(a2+ tmean_Aug *(a3+ tmean_Aug *(a4	+ tmean_Aug *(a5	+ tmean_Aug *a6)))))))*100 -  (tmean_Aug))/1000,
-      VPD_Sept =  ((( a0+ tmean_Sept*(a1+ tmean_Sept *(a2+ tmean_Sept *(a3+ tmean_Sept *(a4	+ tmean_Sept *(a5	+ tmean_Sept *a6)))))))*100 -  (tmean_Sept))/1000,
-      VPD_Oct =   ((( a0+ tmean_Oct*(a1+ tmean_Oct *(a2+ tmean_Oct *(a3+ tmean_Oct *(a4	+ tmean_Oct *(a5	+ tmean_Oct *a6)))))))*100 -  (tmean_Oct))/1000,
-      VPD_Nov =   ((( a0+ tmean_Nov*(a1+ tmean_Nov *(a2+ tmean_Nov *(a3+ tmean_Nov *(a4	+ tmean_Nov *(a5	+ tmean_Nov *a6)))))))*100 -  (tmean_Nov))/1000,
-      VPD_Dec =   ((( a0+ tmean_Dec*(a1+ tmean_Dec *(a2+ tmean_Dec *(a3+ tmean_Dec *(a4	+ tmean_Dec *(a5	+ tmean_Dec *a6)))))))*100 -  (tmean_Dec))/1000
+      # VPD (hPa): SVP at mean temp minus SVP at dew point (approximated by tmin)
+      # using svp() and vpd() from Functions/climate.R (Williams et al. NatCC 2012, eq S1)
+      VPD_Jan   = vpd(tmean_Jan,   tmin_Jan),
+      VPD_Feb   = vpd(tmean_Feb,   tmin_Feb),
+      VPD_March = vpd(tmean_March, tmin_March),
+      VPD_April = vpd(tmean_April, tmin_April),
+      VPD_May   = vpd(tmean_May,   tmin_May),
+      VPD_June  = vpd(tmean_June,  tmin_June),
+      VPD_July  = vpd(tmean_July,  tmin_July),
+      VPD_Aug   = vpd(tmean_Aug,   tmin_Aug),
+      VPD_Sept  = vpd(tmean_Sept,  tmin_Sept),
+      VPD_Oct   = vpd(tmean_Oct,   tmin_Oct),
+      VPD_Nov   = vpd(tmean_Nov,   tmin_Nov),
+      VPD_Dec   = vpd(tmean_Dec,   tmin_Dec)
     ) %>%
     #calculate annual values
     transmute(#keep = c("year", "Long", "Lat"),
@@ -486,9 +492,12 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
       # annual water deficit (mm of water over degrees celsius)(sum across all months?)
       tmean = pmap_dbl(.[c("tmean_Jan", "tmean_Feb", "tmean_March", "tmean_April", "tmean_May", "tmean_June", "tmean_July", "tmean_Aug", "tmean_Sept", "tmean_Oct" ,"tmean_Nov", "tmean_Dec")],
                        .f = function(tmean_Jan, tmean_Feb, tmean_March, tmean_April, tmean_May, tmean_June, tmean_July, tmean_Aug, tmean_Sept, tmean_Oct ,tmean_Nov, tmean_Dec, ...) {
-                         temp <- sum(tmean_Jan* 31/31, tmean_Feb* 28.5/31, tmean_March* 31/31, tmean_April * 30/31,
-                                     tmean_May * 31/31, tmean_June * 30/31, tmean_July * 31/31, tmean_Aug * 31/31,
-                                     tmean_Sept * 30/31, tmean_Oct * 31/31, tmean_Nov * 30/31, tmean_Dec * 31/31)/12
+                         temp <- sum(tmean_Jan * 31/mean_days_per_month, tmean_Feb * 28.25/mean_days_per_month,
+                                     tmean_March * 31/mean_days_per_month, tmean_April * 30/mean_days_per_month,
+                                     tmean_May * 31/mean_days_per_month, tmean_June * 30/mean_days_per_month,
+                                     tmean_July * 31/mean_days_per_month, tmean_Aug * 31/mean_days_per_month,
+                                     tmean_Sept * 30/mean_days_per_month, tmean_Oct * 31/mean_days_per_month,
+                                     tmean_Nov * 30/mean_days_per_month, tmean_Dec * 31/mean_days_per_month) / 12
                          return(temp)
                        }),
       # tmean_OLD = pmap_dbl(.[c("tmean_Jan", "tmean_Feb", "tmean_March", "tmean_April", "tmean_May", "tmean_June", "tmean_July", "tmean_Aug", "tmean_Sept", "tmean_Oct" ,"tmean_Nov", "tmean_Dec")],
@@ -516,9 +525,12 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
       # annual average vapor pressure deficit (in milibars) ()
       annVPD_mean = pmap_dbl(.[c("VPD_Jan", "VPD_Feb", "VPD_March","VPD_April" ,"VPD_May","VPD_June", "VPD_July","VPD_Aug","VPD_Sept","VPD_Oct","VPD_Nov","VPD_Dec")],
                              .f = function(VPD_Jan, VPD_Feb, VPD_March,VPD_April ,VPD_May,VPD_June, VPD_July,VPD_Aug,VPD_Sept,VPD_Oct,VPD_Nov,VPD_Dec) {
-                               mean(c(VPD_Jan* 31/31, VPD_Feb * 28.5/31, VPD_March * 31/31, VPD_April* 30/31,
-                                      VPD_May * 31/31, VPD_June * 30/31, VPD_July * 31/31, VPD_Aug * 31/31,
-                                      VPD_Sept * 30/31, VPD_Oct * 31/31, VPD_Nov * 30/31, VPD_Dec * 31/31))
+                               mean(c(VPD_Jan * 31/mean_days_per_month, VPD_Feb * 28.25/mean_days_per_month,
+                                      VPD_March * 31/mean_days_per_month, VPD_April * 30/mean_days_per_month,
+                                      VPD_May * 31/mean_days_per_month, VPD_June * 30/mean_days_per_month,
+                                      VPD_July * 31/mean_days_per_month, VPD_Aug * 31/mean_days_per_month,
+                                      VPD_Sept * 30/mean_days_per_month, VPD_Oct * 31/mean_days_per_month,
+                                      VPD_Nov * 30/mean_days_per_month, VPD_Dec * 31/mean_days_per_month))
                              }),
       # annVPD_mean_OLD = pmap_dbl(.[c("VPD_Jan", "VPD_Feb", "VPD_March","VPD_April" ,"VPD_May","VPD_June", "VPD_July","VPD_Aug","VPD_Sept","VPD_Oct","VPD_Nov","VPD_Dec")],
       #                            .f = function(VPD_Jan, VPD_Feb, VPD_March,VPD_April ,VPD_May,VPD_June, VPD_July,VPD_Aug,VPD_Sept,VPD_Oct,VPD_Nov,VPD_Dec) {
@@ -546,7 +558,7 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
   
   # save for subsequent use
   if (!test) {
-    saveRDS(climVar, file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/climateValuesForAnalysis_monthly_slice",z ,".csv"))
+    saveRDS(climVar, file = paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/climateValuesForAnalysis_monthly_slice", z, suffix, ".csv"))
     #climVar <- readRDS(file="./Data_processed/CoverData/dayMet_intermediate/WallToWall/climateValuesForAnalysis_monthly.rds")
   }
   
@@ -640,7 +652,7 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
   
   names(annMeans_30yr)[3:26] <- paste0(names(annMeans_30yr)[3:26], "_30yr")
   if (!test) {
-    saveRDS(annMeans_30yr, paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/annMeans_30yrs_slice",z ,".csv"))
+    saveRDS(annMeans_30yr, paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/annMeans_30yrs_slice", z, suffix, ".csv"))
     #annMeans_30yr <- readRDS("./Data_processed/CoverData/dayMet_intermediate/WallToWall/annMeans_30yrs.rds")
   }
   
@@ -655,7 +667,7 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
   
   if (!test) {
     # save intermediate data
-    saveRDS(testLag, paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/climVars_AnnualMeansAndLaggedValues_slice",z ,".csv"))
+    saveRDS(testLag, paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/climVars_AnnualMeansAndLaggedValues_slice", z, suffix, ".csv"))
     #test <- readRDS("./Data_processed/CoverData/dayMet_intermediate/climVars_AnnualMeansAndLaggedValues.rds")
   }
   
@@ -697,7 +709,7 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
   if (!test) {
     # save climate values for analysis
     
-    saveRDS(climDatNew, paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/dayMetClimateValuesForAnalysis_final_slice",z ,".csv"))
+    saveRDS(climDatNew, paste0("./Data_processed/CoverData/dayMet_intermediate/WallToWall/dayMetClimateValuesForAnalysis_final_slice", z, suffix, ".csv"))
     #climDatNew <- readRDS("./Data_processed/CoverData/dayMetClimateValuesForAnalysis_final.rds")
   }
 # remove values for the current slice and proceed to the next   
@@ -707,7 +719,7 @@ gc()
 
 # Now add data from different slices together  ---------------------------------
 # get file names 
-climDatNames <- list.files("./Data_processed/CoverData/dayMet_intermediate/WallToWall/", pattern = "dayMetClimateValuesForAnalysis_final_slice")
+climDatNames <- list.files("./Data_processed/CoverData/dayMet_intermediate/WallToWall/", pattern = paste0("dayMetClimateValuesForAnalysis_final_slice.*", suffix))
 
 listOut <- apply(as.matrix(climDatNames), MARGIN = 1, FUN = function(x) {
   # get data fore each slice and remove any data that aren't for 2023
@@ -720,10 +732,10 @@ listOut <- apply(as.matrix(climDatNames), MARGIN = 1, FUN = function(x) {
 # save for further analysis 
 listOut %>% 
   select(-precip_driestMonth_meanAnnAvg_3yrAnom, -precip_driestMonth_meanAnnAvg_2yrAnom) %>% 
-  saveRDS("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues.rds")
+  saveRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues", suffix, ".rds"))
 
 # save as a raster w/ layers for each variable ----------------------------
-listOut <- readRDS("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues.rds")
+listOut <- readRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues", suffix, ".rds"))
 
 # data averaged over 1992 to 2022 -- data used as predictors for cover data collected in 2023
 # turn into a raster 
@@ -768,7 +780,7 @@ terra::set.names(testOutRast_final, value = c("tmin_meanAnnAvg_CLIM"            
 )
 
 # save raster
-terra::writeRaster(x = testOutRast_final, filename = "./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_raster.tif")
+terra::writeRaster(x = testOutRast_final, filename = paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_raster", suffix, ".tif"))
 
 
 # Add soils information --------------------------------------------------
@@ -777,7 +789,7 @@ if (sum(list.files("./Data_processed/") == "SoilsRaster.rds") == 0) {
   # load gridded soils data from Daniel (currently an old version, will be updated w/ SOLUS100 data)
   gridClay <- terra::rast(x = "./Data_raw/soilsDB_new/claytotal_PED-CONUS4km_SOLUS100.nc") %>% 
     terra::project(y = crs(vegDat))
-  names(gridClay) <- c(clayPerc_2cm,
+  names(gridClay) <- c("clayPerc_2cm",
                        "clayPerc_7cm"  ,            
                        "clayPerc_15cm" , 
                        "clayPerc_25cm", 
@@ -1001,8 +1013,9 @@ rm(listOut, listOut_vect, vegSoils_df)
 gc()
 
 ## save intermediate data
-saveRDS(temp, "./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE.rds")
-temp <- readRDS("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE.rds")
+saveRDS(temp, paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE", suffix, ".rds"))
+temp <- readRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE", suffix, ".rds"))
+
 
 # calculate # # intermediate value 'p' 
 # loop through b/c R keeps crashing
@@ -1101,8 +1114,8 @@ for (i in 1:100) {
   }
 }
 
-saveRDS(outDF, "./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE_2.rds")
-outDF <- readRDS("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE_2.rds")
+saveRDS(outDF, paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE_2", suffix, ".rds"))
+outDF <- readRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_WithSoilsINTERMEDIATE_2", suffix, ".rds"))
 
 vegSoils_new <- vegSoils_new %>% 
   left_join(outDF)
@@ -1153,5 +1166,5 @@ test3 <- test2 %>%
 # save for further analysis 
 test3 %>% 
   #select(-precip_driestMonth_meanAnnAvg_3yrAnom, -precip_driestMonth_meanAnnAvg_2yrAnom) %>% 
-  saveRDS("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_withSoils.rds")
+  saveRDS(paste0("./Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_withSoils", suffix, ".rds"))
 
