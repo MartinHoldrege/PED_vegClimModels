@@ -910,10 +910,23 @@ if (sum(list.files("./Data_processed/") == "SoilsRaster.rds") == 0) {
 listOut_vect <- listOut %>% 
   st_as_sf(coords = c("Long", "Lat"), crs = crs(temp_rast), remove = FALSE) %>% 
   terra::vect()
-vegSoils_df <- soilRast %>% 
-  terra::extract(y = listOut_vect #%>% dplyr::select(-x,-y)
-                , xy = TRUE, bind = TRUE) %>% 
+
+# extract in contiguous chunks to keep peak memory bounded: extracting all
+# CONUS points at once with bind = TRUE forces terra to hold several full-size
+# copies of the (~8M row x ~120 col) table simultaneously, which triggers
+# std::bad_alloc. Chunking limits the transient copies to one chunk at a time.
+nSoilChunks <- 100
+soilChunkID <- rep(1:nSoilChunks, each = ceiling(nrow(listOut_vect) / nSoilChunks),
+                   length.out = nrow(listOut_vect))
+vegSoils_df <- lapply(seq_len(nSoilChunks), function(i) {
+  soilRast %>%
+    terra::extract(y = listOut_vect[soilChunkID == i], xy = TRUE, bind = TRUE) %>%
+    as.data.frame()
+}) %>%
+  data.table::rbindlist() %>%
   as.data.frame()
+rm(soilChunkID)
+gc()
 
 # calculate soils variables w/ cover data ---------------------------------
 names(vegSoils_df)[c(length(names(vegSoils_df))-1, length(names(vegSoils_df)))] <- c("x_UTM", "y_UTM")
@@ -1022,7 +1035,7 @@ temp <- vegSoils_new %>%
          coarsePerc_125cm = coarsePerc_125cm/100,
          coarsePerc_176cm = coarsePerc_176cm/100) #%>% 
 #slice(1:3) 
-rm(listOut, listOut_vect, vegSoils_df)
+rm(listOut, listOut_vect)
 gc()
 
 ## save intermediate data
@@ -1067,7 +1080,9 @@ for (i in 1:100) {
                               coarsePerc_25cm, coarsePerc_35cm, coarsePerc_50cm, 
                               coarsePerc_70cm, coarsePerc_90cm ,coarsePerc_125cm, 
                               coarsePerc_176cm) {
-                      p <- rSOILWAT2::ptf_estimate(
+                      # tryCatch so a single degenerate soil profile returns
+                      # NULL instead of aborting the whole 100-clump loop
+                      p <- tryCatch(rSOILWAT2::ptf_estimate(
                         sand = c(sandPerc_2cm,sandPerc_7cm , sandPerc_15cm,
                                  sandPerc_25cm , sandPerc_35cm, sandPerc_50cm , sandPerc_70cm, sandPerc_90cm ,
                                  sandPerc_125cm,sandPerc_176cm),
@@ -1079,7 +1094,7 @@ for (i in 1:100) {
                                     coarsePerc_125cm,coarsePerc_176cm),
                         swrc_name = "Campbell1974",
                         ptf_name = "Cosby1984"
-                      )
+                      ), error = function(e) NULL)
                     }
   )
 
@@ -1088,8 +1103,10 @@ for (i in 1:100) {
   vegSoil_tmp <- purrr::map(.x = c(1:nrow(temp_temp)
   ), 
   function (n) {
-    print(n)
-    tmp <- rSOILWAT2::swrc_swp_to_vwc(
+    # print(n)
+    # tryCatch guards the rare bad cell (incl. when p above is NULL); the NA
+    # matrix keeps the shape so diff()/awc downstream yield NA, not an error
+    tmp <- tryCatch(rSOILWAT2::swrc_swp_to_vwc(
       c(-1.5, -0.033), ##AES should I change this? not totally clear what these values indicate 
       fcoarse = unlist(as.vector(temp_temp[n,c("coarsePerc_2cm" ,                           
                                           "coarsePerc_7cm" ,  "coarsePerc_15cm",                        
@@ -1098,7 +1115,7 @@ for (i in 1:100) {
                                           "coarsePerc_90cm",  "coarsePerc_125cm",                        
                                           "coarsePerc_176cm")])),
       swrc = list(name = "Campbell1974", swrcp = vegSoil_p[[n]])
-    )
+    ), error = function(e) matrix(NA_real_, nrow = 2, ncol = 10))
   }
   )
   
@@ -1171,7 +1188,7 @@ test <- test[!uniqueID_dups,]
 test2 <- test %>% 
   left_join(vegSoils_df) %>% 
   select(names(test), Long, Lat)
-   
+rm(vegSoils_df)
 # change the geometry to correspond to the original Lat/Long values, not the soilRaster values
 test3 <- test2 %>% 
   st_drop_geometry() %>% 
