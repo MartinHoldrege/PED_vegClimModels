@@ -13,8 +13,11 @@ library(terra)
 library(sf)
 library(rSOILWAT2)
 
+# suffix for versioned files ("_v2" = updated climate processing; "" = original)
+suffix <- "_v2"
+
 # read in veg data --------------------------------------------------------
-vegDat_temp <- readRDS("./Data_processed/CoverData/DataForModels_withEcoregion_sampledLANDFIRE.rds")
+vegDat_temp <- readRDS(paste0("./Data_processed/CoverData/DataForModels_withEcoregion_sampledLANDFIRE", suffix, ".rds"))
 # should change the geometry to points (was small polygons for spatial joins) 
 
 vegDat <- vegDat_temp %>%
@@ -451,7 +454,7 @@ temp <- vegSoils_new %>%
 
   ## save the spatially averaged data w/ soil added and after LCMAP filtering
   saveRDS(newFinalDat_new %>% st_drop_geometry(), 
-          "./Data_processed/CoverData/DataForModels_spatiallyAveraged_withSoils_noSf_sampledLANDFIRE.rds")
+          paste0("./Data_processed/CoverData/DataForModels_spatiallyAveraged_withSoils_noSf_sampledLANDFIRE", suffix, ".rds"))
   #newFinalDat <- readRDS("./Data_processed/CoverData/DataForModels_spatiallyAveraged_withSoils_noSf_sampledLANDFIRE.rds")
 
   

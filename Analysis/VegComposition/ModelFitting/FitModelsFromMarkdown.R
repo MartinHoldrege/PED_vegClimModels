@@ -370,3 +370,22 @@ rmarkdown::render(input = "./Analysis/VegComposition/ModelFitting/03_modelFittin
                   output_dir = "./Analysis/VegComposition/ModelFitting/outputHtmls/ModelsWeUseDownstream/",
                   output_file = "betaLASSO_CONUS_ForbCover_prop_trimAnom.html")
 
+# Global forest (tree / no-tree) model ------------------------------------------
+# Knit 02_modelFitting_globalForestModel.Rmd. The suffix is passed to the Rmd
+# (so it reads the matching v2 data & writes v2 model outputs) and appended to
+# the html filename, so a "_v2" run does not overwrite the original html.
+suffix <- "_v2" # "_v2" = updated (v2) climate data; "" = original
+
+rmarkdown::render(input = "./Analysis/VegComposition/ModelFitting/02_modelFitting_globalForestModel.Rmd",
+                  params = list(  run = FALSE,
+                                  save_figs = TRUE,
+                                  ecoregion = "CONUS",
+                                  response = "TotalTreeCover",
+                                  treeThreshold = 10,
+                                  whichSecondBestMod = "halfse",
+                                  thresholdMethod = "PredPrev=Obs",
+                                  suffix = suffix),
+                  output_format = "html_document",
+                  output_dir = "./Analysis/VegComposition/ModelFitting/outputHtmls/ModelsWeUseDownstream/",
+                  output_file = paste0("02_modelFitting_globalForestModel", suffix, ".html"))
+

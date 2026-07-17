@@ -12,12 +12,15 @@ library(sf)
 library(terra)
 library(mapview)
 
+# suffix for versioned files ("_v2" = updated climate processing; "" = original)
+suffix <- "_v2"
+
 # load data ---------------------------------------------------------------
 
 # data ready for model fitting
 #modDat <- readRDS("./Data_processed/CoverData/DataForModels_spatiallyAveragedWithN_sf.rds")
 
-modDat <- readRDS("./Data_processed/CoverData/DataForModels_spatiallyAveraged_sf_sampledLANDFIRE.rds")
+modDat <- readRDS(paste0("./Data_processed/CoverData/DataForModels_spatiallyAveraged_sf_sampledLANDFIRE", suffix, ".rds"))
 modDat %>% 
   #st_drop_geometry() %>% 
   #filter(!is.na(TotalHerbaceousCover)) %>% 
@@ -90,7 +93,7 @@ newDat <- newDat %>%
   select(-Lat, -Long)
 
 # Save Data for further analysis ------------------------------------------
-saveRDS(newDat, "./Data_processed/CoverData/DataForModels_withEcoregion_sampledLANDFIRE.rds")
+saveRDS(newDat, paste0("./Data_processed/CoverData/DataForModels_withEcoregion_sampledLANDFIRE", suffix, ".rds"))
 # 
 # newDat %>%
 #   st_drop_geometry() %>%

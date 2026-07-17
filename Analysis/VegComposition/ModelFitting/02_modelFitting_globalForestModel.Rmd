@@ -16,6 +16,7 @@ params:
   treeThreshold: 10
   whichSecondBestMod: "halfse"# 1se OR halfse OR auto (chose the model w/ fewest # of predictors)
   thresholdMethod: "PredPrev=Obs" # approach for identifying best threshold
+  suffix: "_v2" # "_v2" = updated (v2) climate processing; "" = original files
 subtitle: "Based on code from Martin Holdrege's Sagebrush-Fire paper"
 ---
 This workflow fits a model across all of CONUS that predicts whether a location does or does not have trees. 
@@ -45,6 +46,7 @@ run <- params$run
 whichSecondBestMod <- params$whichSecondBestMod
 treeThreshold <- params$treeThreshold
 thresholdMethod <- params$thresholdMethod
+suffix <- params$suffix
 ```
 
 Load packages and source functions
@@ -131,7 +133,7 @@ Data compiled in the `prepDataForModels.R` script
 
 ```{r}
 here::i_am("Analysis/VegComposition/ModelFitting/02_ModelFitting_globalForestModel.Rmd")
-modDat <- readRDS( here("Data_processed", "CoverData", "DataForModels_spatiallyAveraged_withSoils_noSf_sampledLANDFIRE.rds")) %>% st_drop_geometry()
+modDat <- readRDS( here("Data_processed", "CoverData", paste0("DataForModels_spatiallyAveraged_withSoils_noSf_sampledLANDFIRE", suffix, ".rds"))) %>% st_drop_geometry()
 ```
 
 # Prep data
@@ -238,7 +240,7 @@ allPreds <- modDat_1 %>%
   names()
 modDat_1_s_temp <- modDat_1 %>% 
   mutate(across(all_of(allPreds), base::scale, .names = "{.col}_s")) 
-saveRDS(modDat_1_s_temp, file = "./models/scaledModelInputData_yesNoTreeMod.rds")
+saveRDS(modDat_1_s_temp, file = paste0("./models/scaledModelInputData_yesNoTreeMod", suffix, ".rds"))
 
 # Remove the rows that have no observations for total tree cover
 modDat_1_s <- modDat_1_s_temp[!is.na(modDat_1_s_temp[,"TotalTreeCover_binom"]),]
@@ -604,7 +606,7 @@ if (run == TRUE) {
       standardize = FALSE, ## scales variables prior to the model sequence... coefficients are always returned on the original scale
       parallel = TRUE
     )
-    base::saveRDS(fit, paste0("../ModelFitting/models/ForestMod_globalLASSOmod_binomial_treeCutoff_",treeThreshold,".rds"))
+    base::saveRDS(fit, paste0("../ModelFitting/models/ForestMod_globalLASSOmod_binomial_treeCutoff_",treeThreshold, suffix, ".rds"))
     
   
      best_lambda <- fit$lambda.min
@@ -758,25 +760,25 @@ halfseLambda_coef <- selection_prob_halfseL_df[selection_prob_halfseL_df$Selecti
   fit_glm_halfse <- glm(formula = f_glm_halfse, data = modDat_1_s, family = binomial )
   
   ## save models 
-  saveRDS(fit_glm_bestLambda, paste0("./models/ForestMod_bestLambdaGLM_",treeThreshold,".rds"))
-  saveRDS(fit_glm_halfse, paste0("./models/ForestMod_halfSELambdaGLM_",treeThreshold,".rds"))
-  saveRDS(fit_glm_se, paste0("./models/ForestMod_oneSELambdaGLM_",treeThreshold,".rds"))
+  saveRDS(fit_glm_bestLambda, paste0("./models/ForestMod_bestLambdaGLM_",treeThreshold, suffix, ".rds"))
+  saveRDS(fit_glm_halfse, paste0("./models/ForestMod_halfSELambdaGLM_",treeThreshold, suffix, ".rds"))
+  saveRDS(fit_glm_se, paste0("./models/ForestMod_oneSELambdaGLM_",treeThreshold, suffix, ".rds"))
     
   ## save the R environment after running the models 
   save(f_glm_halfse, mat_glmnet_halfse, halfseLambda_coef,
               f_glm_1se, mat_glmnet_1se, seLambda_coef,
               f_glm_bestLambda, mat_glmnet_best, bestLambda_coef,
-              file = paste0("./models/interimModelFittingObjects_ForestMod_binomial_",treeThreshold,".rds"))
+              file = paste0("./models/interimModelFittingObjects_ForestMod_binomial_",treeThreshold, suffix, ".rds"))
   } else {
     # read in LASSO object
-    fit <- readRDS(paste0("../ModelFitting/models/ForestMod_globalLASSOmod_binomial_treeCutoff_",treeThreshold,".rds"))
+    fit <- readRDS(paste0("../ModelFitting/models/ForestMod_globalLASSOmod_binomial_treeCutoff_",treeThreshold, suffix, ".rds"))
     
     # read in R objects having to do w/ model fitting 
-    load(file = paste0("./models/interimModelFittingObjects_ForestMod_binomial_",treeThreshold,".rds"))
+    load(file = paste0("./models/interimModelFittingObjects_ForestMod_binomial_",treeThreshold, suffix, ".rds"))
       
-  fit_glm_bestLambda <- readRDS(paste0("./models/ForestMod_bestLambdaGLM_",treeThreshold,".rds"))
-  fit_glm_halfse <- readRDS(paste0("./models/ForestMod_halfSELambdaGLM_",treeThreshold,".rds"))
-  fit_glm_se <- readRDS(paste0("./models/ForestMod_oneSELambdaGLM_",treeThreshold,".rds"))
+  fit_glm_bestLambda <- readRDS(paste0("./models/ForestMod_bestLambdaGLM_",treeThreshold, suffix, ".rds"))
+  fit_glm_halfse <- readRDS(paste0("./models/ForestMod_halfSELambdaGLM_",treeThreshold, suffix, ".rds"))
+  fit_glm_se <- readRDS(paste0("./models/ForestMod_oneSELambdaGLM_",treeThreshold, suffix, ".rds"))
   }
 
 
@@ -1020,7 +1022,7 @@ trainDatPredName <- "pred_opt_halfse"
 ```{r}
 ## Get wall-to-wall climate data calculated from dayMet, which we will use for calibration
 # read in unscaled climate data
-climDat_Temp <- readRDS("../../../Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_withSoils.rds")
+climDat_Temp <- readRDS(paste0("../../../Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_withSoils", suffix, ".rds"))
 #climDat_Temp <- readRDS("../../../Data_processed/EcoRegion_climSoilData.rds")
 
 # rename
@@ -1204,7 +1206,7 @@ roc_curve <- roc(pred_glm1_test$TotalTreeCover_binom, pred_glm1_test$TotalTreeCo
 plot(roc_curve, main =  paste0("ROC Curve for best lambda model \n","AUC: ",round(roc_curve$auc,2)))
 
 ## save this prevalence for later 
-saveRDS(best_threshold_bestLambda, "./models/ForestModelPrevalence.rds")
+saveRDS(best_threshold_bestLambda, paste0("./models/ForestModelPrevalence", suffix, ".rds"))
 ```
 
 For the second-bestLambda model: 
@@ -1260,8 +1262,8 @@ text(x = highBuffProb +.05, y = 0.15, labels = round(highBuffProb, 4))
 
 ## save buffers for later
 
-saveRDS(lowBuffProb, "./models/ForestModel_interpLowerBuffer.rds")
-saveRDS(highBuffProb, "./models/ForestModel_interpHigherBuffer.rds")
+saveRDS(lowBuffProb, paste0("./models/ForestModel_interpLowerBuffer", suffix, ".rds"))
+saveRDS(highBuffProb, paste0("./models/ForestModel_interpHigherBuffer", suffix, ".rds"))
 ```
 
 For the best-lambda model: 
@@ -3304,14 +3306,14 @@ modDat_treePreds <- modDat_1_s_temp %>%
   left_join(predData %>% select(-c(tmean:AWHC)), by = c("rowID", "Year", "x", "y")) %>% 
   select(-c(tmin_s:AWHC_s))
 
-saveRDS(modDat_treePreds,"../../../Data_processed/CoverData/CoverModelData_withTreeNoTreePreds.rds")
+saveRDS(modDat_treePreds, paste0("../../../Data_processed/CoverData/CoverModelData_withTreeNoTreePreds", suffix, ".rds"))
 
 ```
 
 
 <!-- ```{r, eval = FALSE} -->
 <!-- # get data -->
-<!-- modDat_treePreds <- readRDS("../../../Data_processed/CoverData/CoverModelData_withTreeNoTreePreds.rds") -->
+<!-- modDat_treePreds <- readRDS(paste0("../../../Data_processed/CoverData/CoverModelData_withTreeNoTreePreds", suffix, ".rds")) -->
 
 <!-- # make map -->
 <!-- modDat_treePreds %>%  -->
