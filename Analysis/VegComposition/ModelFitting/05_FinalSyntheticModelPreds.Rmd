@@ -9,6 +9,7 @@ output:
     df_print: paged
     code_folding: hide
     dev: "jpeg"
+    keep_md: TRUE
 params:
   readParams: TRUE
   runClimate: FALSE
@@ -1049,7 +1050,7 @@ geom_raster(data = plotObs_2, aes(x = x, y = y, fill = as.character(mean)),maxce
                    strip.text = element_text(size = 15),
                    title = element_text(size = 18),
                    axis.ticks = element_blank()) + 
-labs(title = c("Locations with no trees (binary), based on the zero tree model,\n--using contemporary dayMet data (2023)"),
+labs(title = c("Locations with no trees (binary), \nbased on the zero tree model,\n--using contemporary dayMet data (2023)"),
      subtitle = c("Values are the average binary predictions \nwithin each 1 km x 1 km grid cell"), x = "", y = ""
      ) 
          
@@ -1092,7 +1093,7 @@ geom_raster(data = plotObs_2, aes(x = x, y = y, fill = as.character(mean)),maxce
                    strip.text = element_text(size = 15),
                    title = element_text(size = 18),
                    axis.ticks = element_blank()) + 
-labs(title = c("Locations with no trees (binary), based on the zero tree model,\n--using future climate data from the BNU-ESM model"),
+labs(title = c("Locations with no trees (binary), \nbased on the zero tree model,\n--using future climate data from the BNU-ESM model"),
      subtitle = c("Values are the average binary predictions \nwithin each 1 km x 1 km grid cell"), x = "", y = ""
      ) 
 
@@ -1134,7 +1135,7 @@ geom_raster(data = plotObs_2, aes(x = x, y = y, fill = as.character(mean)),maxce
                    strip.text = element_text(size = 15),
                    title = element_text(size = 18),
                    axis.ticks = element_blank()) + 
-labs(title = c("Locations with no trees (binary), based on the zero tree model,\n--using future climate data from the IPSL-CM5A-MR model"),
+labs(title = c("Locations with no trees (binary), \nbased on the zero tree model,\n--using future climate data from the IPSL-CM5A-MR model"),
      subtitle = c("Values are the average binary predictions \nwithin each 1 km x 1 km grid cell"), x = "", y = ""
      ) 
 
