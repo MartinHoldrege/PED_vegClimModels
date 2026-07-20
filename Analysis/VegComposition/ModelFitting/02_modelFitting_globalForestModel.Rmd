@@ -83,7 +83,7 @@ library(USAboundaries)
 library(cvms)
 library(rsvg)
 library(ggimage)
-library(doMC)
+# library(doMC)
 library(parallel)
 library(pROC)
 
@@ -210,7 +210,7 @@ modDat_1 <- modDat %>%
   dplyr::select(-c(tmin_meanAnnAvg_3yr:durationFrostFreeDays_meanAnnAvg_3yr))
 
 # get necessary raster data for background data on maps
-test_rastTemp <-  rast("/Users/astears/Documents/Dropbox_static/Work/NAU_USGS_postdoc/cleanPED/PED_vegClimModels/Data_raw/dayMet/rawMonthlyData/orders/70e0da02b9d2d6e8faa8c97d211f3546/Daymet_Monthly_V4R1/data/daymet_v4_prcp_monttl_na_1980.tif") %>%
+test_rastTemp <-  rast("../../../Data_raw/dayMet/rawMonthlyData/orders/70e0da02b9d2d6e8faa8c97d211f3546/Daymet_Monthly_V4R1/data/daymet_v4_prcp_monttl_na_1980.tif") %>%
   terra::crop(ext(-2000000, 2600000, -1900000, 1500000))
 
 
@@ -588,7 +588,7 @@ if (run == TRUE) {
 
     # set up parallel processing
     # this computer has 16 cores (parallel::detectCores())
-    registerDoMC(cores = 8)
+    # registerDoMC(cores = 8)
     
     fit <- cv.glmnet(
       x = X[,2:ncol(X)], 
@@ -604,7 +604,7 @@ if (run == TRUE) {
       foldid = my_folds,
       #thresh = thresh,
       standardize = FALSE, ## scales variables prior to the model sequence... coefficients are always returned on the original scale
-      parallel = TRUE
+      parallel = FALSE
     )
     base::saveRDS(fit, paste0("../ModelFitting/models/ForestMod_globalLASSOmod_binomial_treeCutoff_",treeThreshold, suffix, ".rds"))
     
