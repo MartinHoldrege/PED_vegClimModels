@@ -22,7 +22,7 @@ suffix <- "_v2"
 source("./Functions/climate.R")
 
 # Options -----------------------------------------------------------------
-runClimateCalcs <- FALSE
+runClimateCalcs <- TRUE
 
 # Load data ---------------------------------------------------------------
 
@@ -54,7 +54,7 @@ points_sf <- points_sf %>%
 
 # Acquire weather data and calculate variables ----------------------------
 
-if(runClimateCalcs == TRUE) {
+if(runClimateCalcs) {
   #
   # load monthly total precip values and make into a raster stack
   for (i in 1:length(rastNames[str_detect(string = rastNames,
@@ -379,7 +379,7 @@ if(runClimateCalcs == TRUE) {
         lubridate::yday(as.Date(paste0(lastAboveFreezing_month, "/30/2024"),
                                 format = "%m/%d/%Y")) -
         # DOY of first day of first frost-free month
-        lubridate::yday(as.Date(paste0("0",aboveFreezing_month, "/01/2024"),
+        lubridate::yday(as.Date(paste0(aboveFreezing_month, "/01/2024"),
                                                       format = "%m/%d/%Y"))
       )
 
@@ -529,8 +529,9 @@ if(runClimateCalcs == TRUE) {
   gc()
 
   # save for subsequent use
-  saveRDS(climVar, file = paste0("./Data_processed/CoverData/dayMet_intermediate/climateValuesForAnalysis_monthly", suffix, ".rds"))
-  climVar <- readRDS(file="./Data_processed/CoverData/dayMet_intermediate/climateValuesForAnalysis_monthly.rds")
+  p <- paste0("./Data_processed/CoverData/dayMet_intermediate/climateValuesForAnalysis_monthly", suffix, ".rds")
+  saveRDS(climVar, file = p)
+  climVar <- readRDS(file= p)
 
 
   #fix issue w/ prcp_seasonality and prcpTempCorr --------------------------
@@ -701,7 +702,6 @@ if(runClimateCalcs == TRUE) {
 
   testNew <- test %>%
     rename("tmin_meanAnnAvg_CLIM" = tmin_meanAnnAvg_30yr,
-           "tmin_meanAnnAvg_CLIM" = tmin_meanAnnAvg_30yr                  ,
            "tmax_meanAnnAvg_CLIM" = tmax_meanAnnAvg_30yr                  ,
            "tmean_meanAnnAvg_CLIM" = tmean_meanAnnAvg_30yr                 ,
            "prcp_meanAnnTotal_CLIM" = prcp_meanAnnTotal_30yr                ,
@@ -795,9 +795,9 @@ if(runClimateCalcs == TRUE) {
   climDatNew[(climDatNew$precip_driestMonth_meanAnnAvg_CLIM == 0 & !is.na(climDatNew$precip_driestMonth_meanAnnAvg_CLIM))
           & (climDatNew$precip_driestMonth_meanAnnAvg_3yr == 0 & !is.na(climDatNew$precip_driestMonth_meanAnnAvg_3yr)),
           c("precip_driestMonth_meanAnnAvg_3yrAnom")] <- 0
-  climDatNew[(climDatNew$precip_driestMonth_meanAnnAvg_29yr == 0 & !is.na(climDatNew$precip_driestMonth_meanAnnAvg_29yr))
-             & (climDatNew$precip_driestMonth_meanAnnAvg_2yr == 0 & !is.na(climDatNew$precip_driestMonth_meanAnnAvg_2yr)),
-             c("precip_driestMonth_meanAnnAvg_2yrAnom")] <- 0
+  # climDatNew[(climDatNew$precip_driestMonth_meanAnnAvg_29yr == 0 & !is.na(climDatNew$precip_driestMonth_meanAnnAvg_29yr))
+  #            & (climDatNew$precip_driestMonth_meanAnnAvg_2yr == 0 & !is.na(climDatNew$precip_driestMonth_meanAnnAvg_2yr)),
+  #            c("precip_driestMonth_meanAnnAvg_2yrAnom")] <- 0
 
   rm(climDat, allMetDat, allMetDat2, annMetDat)
   gc()
@@ -809,8 +809,10 @@ if(runClimateCalcs == TRUE) {
 
   # Determine accuracy of 'fixes' for precip seasonality and precipT --------
   precipSeasonalityDat <- climDatNew %>%
-    select(year, Long, Lat, precip_Seasonality_meanAnnAvg_CLIM, precip_Seasonality_meanAnnAvg_2yr,
-           precip_Seasonality_meanAnnAvg_3yr, precip_Seasonality_meanAnnAvg_29yr,
+    select(year, Long, Lat, precip_Seasonality_meanAnnAvg_CLIM, 
+           # precip_Seasonality_meanAnnAvg_2yr,
+           precip_Seasonality_meanAnnAvg_3yr,
+           #precip_Seasonality_meanAnnAvg_29yr,
            precip_Seasonality_meanAnnAvg_3yrAnom, precip_Seasonality_meanAnnAvg_2yrAnom)
 
   precipSeasonalityDat %>%
@@ -820,7 +822,7 @@ if(runClimateCalcs == TRUE) {
 
 }
 # Now, add the climate data to the spatially averaged cover observations -----------------------------------------------
-climDatNew <- readRDS("./Data_processed/CoverData/dayMetClimateValuesForAnalysis_final.rds")
+climDatNew <- readRDS(paste0("./Data_processed/CoverData/dayMetClimateValuesForAnalysis_final", suffix, ".rds"))
 ## assign a 'unique ID' to each location (So the same location has the same ID across years)
 
 climDatNew$locID <- paste0(climDatNew$Lat, "_", climDatNew$Long)

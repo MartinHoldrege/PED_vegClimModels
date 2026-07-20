@@ -416,7 +416,7 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
         lubridate::yday(as.Date(paste0(lastAboveFreezing_month, "/30/2024"),
                                 format = "%m/%d/%Y")) -
         # DOY of first day of first frost-free month
-        lubridate::yday(as.Date(paste0("0",aboveFreezing_month, "/01/2024"),
+        lubridate::yday(as.Date(paste0(aboveFreezing_month, "/01/2024"),
                                 format = "%m/%d/%Y"))
     )
   
