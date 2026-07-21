@@ -1,15 +1,40 @@
-# # this script runs the '02_ModelFitting.Rmd" file for each cover variable and saves the output
-# 
-# setwd("/Users/astears/Documents/Dropbox_static/Work/NAU_USGS_postdoc/cleanPED/PED_vegClimModels/")
+# For running other scripts
 
+library(callr)
+
+
+# params ------------------------------------------------------------------
+
+run_prep <- TRUE
 run_02 <- TRUE
 run_03 <- FALSE
+suffix <- "_v2" # "_v2" = updated (v2) climate data; "" = original
+
+
+# data prep ---------------------------------------------------------------
+
+
+prep_scripts <- c(
+  "Analysis/VegComposition/DataPrep/06_GettingWeatherData.R",
+  "Analysis/VegComposition/DataPrep/07_AddEcoregion.R",
+  "Analysis/VegComposition/DataPrep/08_GetSoilsData.R",
+  "Analysis/VegComposition/DataPrep/09_computeScaleParams.R"
+)
+
+if (run_prep) {
+  for (s in prep_scripts) {
+    cat("\n==== START", s, "----", format(Sys.time()), "====\n")
+    callr::rscript(s)
+    cat("==== DONE ", s, "----", format(Sys.time()), "====\n")
+  }
+  cat("\n==== ALL PREP SCRIPTS COMPLETE ====\n\n")
+}
 
 # Global forest (tree / no-tree) model ------------------------------------------
 # Knit 02_modelFitting_globalForestModel.Rmd. The suffix is passed to the Rmd
 # (so it reads the matching v2 data & writes v2 model outputs) and appended to
 # the html filename, so a "_v2" run does not overwrite the original html.
-suffix <- "_v2" # "_v2" = updated (v2) climate data; "" = original
+
 
 if(run_02) {
   rmarkdown::render(input = "./Analysis/VegComposition/ModelFitting/02_modelFitting_globalForestModel.Rmd",

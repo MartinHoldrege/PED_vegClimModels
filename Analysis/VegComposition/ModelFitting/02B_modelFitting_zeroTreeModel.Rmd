@@ -16,6 +16,7 @@ params:
   treeThreshold: 10
   whichSecondBestMod: "auto"# 1se OR halfse OR auto (chose the model w/ fewest # of predictors)
   thresholdMethod: "PredPrev=Obs" # approach for identifying best threshold
+  suffix: '_v2' # '_v2' or ''
 subtitle: "Based on code from Martin Holdrege's Sagebrush-Fire paper"
 ---
 This workflow fits a model across all of CONUS that predicts whether a location has trees or no trees. 
@@ -38,6 +39,7 @@ print(params)
 test_run <- params$test_run
 save_figs <- params$save_figs
 response <- params$response
+suffix <- params$suffix
 fit_sample <- TRUE # fit model to a sample of the data
 n_train <- 5e4 # sample size of the training data
 n_test <- 1e6 # sample size of the testing data (if this is too big the decile dotplot code throws memory errors)
@@ -131,7 +133,8 @@ Data compiled in the `prepDataForModels.R` script
 
 ```{r}
 here::i_am("Analysis/VegComposition/ModelFitting/02B_modelFitting_zeroTreeModel.Rmd")
-modDat <- readRDS( here("Data_processed", "CoverData", "DataForModels_spatiallyAveraged_withSoils_noSf_sampledLANDFIRE.rds")) %>% st_drop_geometry()
+modDat <- readRDS( here("Data_processed", "CoverData", paste0("DataForModels_spatiallyAveraged_withSoils_noSf_sampledLANDFIRE", suffix, 
+                                                              ".rds"))) %>% st_drop_geometry()
 # get scaled data
 modDat_1_s <- readRDS("./models/scaledModelInputData.rds")
 ```
@@ -185,7 +188,8 @@ nonForest_rast[nonForest_rast>.5] <- 1
 nonForest_rast[nonForest_rast<=.5] <- 0
 ## download wall-to-wall climate data, which we'll use to fit the model
 ## contemporary climate data (wall-to-wall, no anomalies)
-climDat_Temp <- readRDS("../../../Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_withSoils.rds")
+climDat_Temp <- readRDS(paste0("../../../Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023ClimateValues_withSoils"
+                               , suffix, ".rds"))
 
 # rename
 climDat <- climDat_Temp %>% 
@@ -639,7 +643,7 @@ if (run == TRUE) {
       standardize = FALSE, ## scales variables prior to the model sequence... coefficients are always returned on the original scale
       parallel = TRUE
     )
-    base::saveRDS(fit, paste0("../ModelFitting/models/yesOrNoTrees_globalLASSOmod_binomial_treeCutoff_",treeThreshold,".rds"))
+    base::saveRDS(fit, paste0("../ModelFitting/models/yesOrNoTrees_globalLASSOmod_binomial_treeCutoff_",treeThreshold, suffix, ".rds"))
     
   
      best_lambda <- fit$lambda.min
@@ -793,25 +797,25 @@ halfseLambda_coef <- selection_prob_halfseL_df[selection_prob_halfseL_df$Selecti
   fit_glm_halfse <- glm(formula = f_glm_halfse, data = modDat_1_s, family = "binomial")
   
   ## save models 
-  saveRDS(fit_glm_bestLambda, paste0("./models/yesOrNoTrees_bestLambdaGLM_",treeThreshold,".rds"))
-  saveRDS(fit_glm_halfse, paste0("./models/yesOrNoTrees_halfSELambdaGLM_",treeThreshold,".rds"))
-  saveRDS(fit_glm_se, paste0("./models/yesOrNoTrees_oneSELambdaGLM_",treeThreshold,".rds"))
+  saveRDS(fit_glm_bestLambda, paste0("./models/yesOrNoTrees_bestLambdaGLM_",treeThreshold, suffix, ".rds"))
+  saveRDS(fit_glm_halfse, paste0("./models/yesOrNoTrees_halfSELambdaGLM_",treeThreshold, suffix, ".rds"))
+  saveRDS(fit_glm_se, paste0("./models/yesOrNoTrees_oneSELambdaGLM_",treeThreshold, suffix, ".rds"))
     
   ## save the R environment after running the models 
   save(f_glm_halfse, mat_glmnet_halfse, halfseLambda_coef,
               f_glm_1se, mat_glmnet_1se, seLambda_coef,
               f_glm_bestLambda, mat_glmnet_best, bestLambda_coef,
-              file = paste0("./models/interimModelFittingObjects_yesOrNoTrees_binomial_",treeThreshold,".rds"))
+              file = paste0("./models/interimModelFittingObjects_yesOrNoTrees_binomial_",treeThreshold, suffix, ".rds"))
   } else {
     # read in LASSO object
-    fit <- readRDS(paste0("../ModelFitting/models/yesOrNoTrees_globalLASSOmod_binomial_treeCutoff_",treeThreshold,".rds"))
+    fit <- readRDS(paste0("../ModelFitting/models/yesOrNoTrees_globalLASSOmod_binomial_treeCutoff_",treeThreshold, suffix, ".rds"))
     
     # read in R objects having to do w/ model fitting 
-    load(file = paste0("./models/interimModelFittingObjects_yesOrNoTrees_binomial_",treeThreshold,".rds"))
+    load(file = paste0("./models/interimModelFittingObjects_yesOrNoTrees_binomial_",treeThreshold, suffix, ".rds"))
       
-  fit_glm_bestLambda <- readRDS(paste0("./models/yesOrNoTrees_bestLambdaGLM_",treeThreshold,".rds"))
-  fit_glm_halfse <- readRDS(paste0("./models/yesOrNoTrees_halfSELambdaGLM_",treeThreshold,".rds"))
-  fit_glm_se <- readRDS(paste0("./models/yesOrNoTrees_oneSELambdaGLM_",treeThreshold,".rds"))
+  fit_glm_bestLambda <- readRDS(paste0("./models/yesOrNoTrees_bestLambdaGLM_",treeThreshold, suffix, ".rds"))
+  fit_glm_halfse <- readRDS(paste0("./models/yesOrNoTrees_halfSELambdaGLM_",treeThreshold, suffix, ".rds"))
+  fit_glm_se <- readRDS(paste0("./models/yesOrNoTrees_oneSELambdaGLM_",treeThreshold, suffix, ".rds"))
   }
 
 
@@ -1055,7 +1059,7 @@ trainDatPredName <- "pred_opt_halfse"
 ```{r}
 ## Get wall-to-wall climate data calculated from dayMet, which we will use for calibration (get version w/ predictors that are already scaled)
 # read in unscaled climate data
-climDatPred <- readRDS("../../../Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023_SCALEDcliamteAndSoilsPredictors.rds")
+climDatPred <- readRDS(paste0("../../../Data_processed/WallToWallClimateData/DayMetData_allCONUS_2023_SCALEDcliamteAndSoilsPredictors", suffix, ".rds"))
 ```
 
 <!-- Make sure that the locations we're using for the model-fitting are the same as the locations used to determine the proportion of CONUS that is un-forested (i.e. masks out the same locations due to fire and/or land use) -->
@@ -1167,7 +1171,7 @@ best_threshold_bestLambda <- optimalThresholds[optimalThresholds$Method == thres
 cat(paste0("Optimal threshold for best lambda model based on ROC curve, based on the ",thresholdMethod, " method: ", best_threshold_bestLambda, "\n"))
 
 ## save this prevalence for later 
-saveRDS(best_threshold_bestLambda, "./models/YesNoTreeModelPrevalence.rds")
+saveRDS(best_threshold_bestLambda, paste0("./models/YesNoTreeModelPrevalence", suffix, ".rds"))
 
 ```
 
@@ -1192,7 +1196,7 @@ cat(paste0("Optimal threshold for second-best lambda model based on ROC curve, b
 
 
 ## save this prevalence for later 
-saveRDS(best_threshold_secondBest, "./models/YesNoTreeModelPrevalence_secondBest.rds")
+saveRDS(best_threshold_secondBest, paste0("./models/YesNoTreeModelPrevalence_secondBest", suffix, ".rds"))
 
 ```
 
@@ -1312,7 +1316,16 @@ pred_glm1_1se_full[pred_glm1_1se_full$fracNotForest_binary == 1 &
 
 ```{r}
 # read in .tif w/ predictions of forest classification from the forest model, which we'll use later oneon dayMet grid
-forestPreds_dmGrid <- terra::rast(x= "../../../Data_processed/CoverData/finalCoverData/predictionsOfForestProbOnDaymetScale.tif")
+# this file created in the 05_ rmd so this section can only run after that's been run. 
+p_fp <- paste0("../../../Data_processed/CoverData/finalCoverData/predictionsOfForestProbOnDaymetScale", suffix, ".tif") # forest preds = fp
+
+if(file.exists(p_fp)) {
+  exists_fp <- TRUE
+  forestPreds_dmGrid <- terra::rast(p_fp)
+} else {
+  exists_fp <- FALSE
+}
+
 
 ```
 
@@ -1751,7 +1764,7 @@ ConfusionTableR::binary_visualiseR(
 ```
 
 ## Map of classification using best lambda model, *only in locations that the forest model predicts to be un-forested*
-```{r classification error map for best lambda model Only in Unforested Locations, fig.height = 6.5, fig.width = 9, warning = FALSE }
+```{r classification error map for best lambda model Only in Unforested Locations, fig.height = 6.5, fig.width = 9, warning = FALSE, eval = exists_fp }
 ## mask data based on forest classification
 missClassRast_bestLambda_forestOnly <- pred_glm1_full_RAST$missClass %>% 
   terra::crop(ext(forestPreds_dmGrid)) %>% 
@@ -1811,7 +1824,7 @@ ConfusionTableR::binary_visualiseR(
 ```
 
 ## Map of classification using second-best lambda model, *only in locations that the forest model predicts to be un-forested*
-```{r classification error map for second-best lambda model Only in Unforested Locations, fig.height = 6.5, fig.width = 9, warning = FALSE }
+```{r classification error map for second-best lambda model Only in Unforested Locations, fig.height = 6.5, fig.width = 9, warning = FALSE, eval = exists_fp }
 ## mask data based on forest classification
 missClassRast_1SE_Lambda_forestOnly <- pred_glm1_1se_full_RAST$missClass %>% 
   terra::crop(ext(forestPreds_dmGrid)) %>% 

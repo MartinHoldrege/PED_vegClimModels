@@ -66,6 +66,12 @@ joined <- inner_join(v1s, v2s, by = keys, suffix = c("_v1", "_v2"))
 message("Rows: v1 = ", nrow(v1s), ", v2 = ", nrow(v2s),
         ", matched = ", nrow(joined))
 
+joined %>%
+  mutate(diff = totalAnnPrecip_v2 - totalAnnPrecip_v1) %>%
+  group_by(Year) %>%
+  summarise(rmse = sqrt(mean(diff^2, na.rm=TRUE)), .groups="drop") %>%
+  arrange(desc(rmse))
+
 # --- RMSE + correlation per variable ----------------------------------------
 metrics <- map_dfr(compare_cols, function(v) {
   a <- joined[[paste0(v, "_v1")]]; b <- joined[[paste0(v, "_v2")]]
