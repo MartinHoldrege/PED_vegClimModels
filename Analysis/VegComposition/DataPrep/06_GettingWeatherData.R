@@ -22,7 +22,7 @@ suffix <- "_v2"
 source("./Functions/climate.R")
 
 # Options -----------------------------------------------------------------
-runClimateCalcs <- TRUE
+runClimateCalcs <- FALSE
 
 # Load data ---------------------------------------------------------------
 
@@ -102,6 +102,9 @@ points_sf <- points_sf[, 'geometry'] %>%
 
 # Acquire weather data and calculate variables ----------------------------
 
+# paths
+p_climNew <- paste0("./Data_processed/CoverData/dayMetClimateValuesForAnalysis_final", suffix, ".rds")
+
 if(runClimateCalcs) {
   #
   prcpPoints     <- extract_daymet_points("prcp_monttl_na_.....tif$", 
@@ -170,6 +173,8 @@ if(runClimateCalcs) {
   write.csv(annMetDat, file = paste0("./Data_processed/CoverData/dayMet_intermediate/sampledDataForAnalysis_Annual_COVER", suffix, ".csv"), row.names = FALSE)
   #annMetDat <- read.csv("./Data_processed/CoverData/dayMet_intermediate/sampledDataForAnalysis_Annual_COVER.csv")
 
+  # after line 166 (annMetDat built), before allMetDat2/climVar:
+  rm(prcpPoints, tmaxPoints, tminPoints, prcpPoints_ann, tmaxPoints_ann, tminPoints_ann); gc()
 
   # add annual data to the monthly data (will use later in processing)
   allMetDat2 <- allMetDat %>%
@@ -178,7 +183,7 @@ if(runClimateCalcs) {
   # drop values w/ NAs (coastal locations)
   allMetDat2 <- allMetDat2 %>%
     drop_na()
-
+  rm(allMetDat, annMetDat); gc()
 
   # calculating climate variables for models -------------------------------
   climVar <- allMetDat2 %>%
@@ -412,16 +417,18 @@ if(runClimateCalcs) {
       annVPD_min = pmap_dbl(.[c("VPD_Jan", "VPD_Feb", "VPD_March","VPD_April" ,"VPD_May","VPD_June", "VPD_July","VPD_Aug","VPD_Sept","VPD_Oct","VPD_Nov","VPD_Dec")], min)
     )
 
-
+ rm(allMetDat2); gc()
   climVar <- cbind(climVar, climVar2)
   plot(climVar$tmin_annAvg, climVar$tmean)
   plot(climVar$tmax_annAvg, climVar$tmean)
 
   ## recalculate tmean as the average of annual average tmax and annual average tmean
+  climVar <- climVar %>%
+    mutate(tmean = (tmin_annAvg + tmax_annAvg)/2)
   # climVar <- climVar %>%
   #   mutate(tmean = (tmin_annAvg + tmax_annAvg)/2)
 
-  rm(climVar2, tminPoints, tminPoints_ann, tmaxPoints, tmaxPoints_ann, prcpPoints, prcpPoints_ann)
+  rm(climVar2)
   gc()
 
   # save for subsequent use
@@ -695,28 +702,34 @@ if(runClimateCalcs) {
   #            & (climDatNew$precip_driestMonth_meanAnnAvg_2yr == 0 & !is.na(climDatNew$precip_driestMonth_meanAnnAvg_2yr)),
   #            c("precip_driestMonth_meanAnnAvg_2yrAnom")] <- 0
 
-  rm(climDat, allMetDat, allMetDat2, annMetDat)
+  rm(climDat)
   gc()
 
   # save climate values for analysis
-  saveRDS(climDatNew, paste0("./Data_processed/CoverData/dayMetClimateValuesForAnalysis_final", suffix, ".rds"))
-  #climDatNew <- readRDS("./Data_processed/CoverData/dayMetClimateValuesForAnalysis_final.rds")
-
-
-  # Determine accuracy of 'fixes' for precip seasonality and precipT --------
-  precipSeasonalityDat <- climDatNew %>%
-    select(year, Long, Lat, precip_Seasonality_meanAnnAvg_CLIM, 
-           # precip_Seasonality_meanAnnAvg_2yr,
-           precip_Seasonality_meanAnnAvg_3yr,
-           #precip_Seasonality_meanAnnAvg_29yr,
-           precip_Seasonality_meanAnnAvg_3yrAnom, precip_Seasonality_meanAnnAvg_2yrAnom)
-
-  precipSeasonalityDat %>%
-    filter(year %in% c(2020:2024)) %>%
-    ggplot() +
-    geom_point(aes(Long, Lat, col = precip_Seasonality_meanAnnAvg_CLIM))
+  saveRDS(climDatNew, p_climNew)
+  
 
 }
+
+climDatNew <- readRDS(p_climNew)
+
+
+# Determine accuracy of 'fixes' for precip seasonality and precipT --------
+precipSeasonalityDat <- climDatNew %>%
+  select(year, Long, Lat, precip_Seasonality_meanAnnAvg_CLIM, 
+         # precip_Seasonality_meanAnnAvg_2yr,
+         precip_Seasonality_meanAnnAvg_3yr,
+         #precip_Seasonality_meanAnnAvg_29yr,
+         precip_Seasonality_meanAnnAvg_3yrAnom
+         
+         #, precip_Seasonality_meanAnnAvg_2yrAnom
+  )
+
+precipSeasonalityDat %>%
+  filter(year %in% c(2020:2024)) %>%
+  ggplot() +
+  geom_point(aes(Long, Lat, col = precip_Seasonality_meanAnnAvg_CLIM))
+
 # Now, add the climate data to the spatially averaged cover observations -----------------------------------------------
 climDatNew <- readRDS(paste0("./Data_processed/CoverData/dayMetClimateValuesForAnalysis_final", suffix, ".rds"))
 ## assign a 'unique ID' to each location (So the same location has the same ID across years)
