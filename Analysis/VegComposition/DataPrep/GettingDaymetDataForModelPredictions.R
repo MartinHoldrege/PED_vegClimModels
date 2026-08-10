@@ -22,10 +22,10 @@ suffix <- "_v2"
 source("./Functions/climate.R")
 
 # is this a test run? 
-test <- FALSE
+test <- TRUE
 # should intermediate steps that already have saved output be recomputed?
 # if FALSE, existing intermediate files are read back in instead of recomputed
-rerun <- FALSE
+rerun <- TRUE
 # do I need to download the data
 downloadRawData <- TRUE
 # set the size of the bins for the dayMet data
@@ -83,6 +83,7 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
   # Acquire weather data and calculate variables ----------------------------
   ## calculating climate for 2023; so I only need climate data starting in 1992 (2023-31 = 1992)
   # get names of rasters (starts in 1980, only need data from )
+
   if (downloadRawData) {
     rastNames <- list.files("./Data_raw/dayMet/rawMonthlyData/orders/70e0da02b9d2d6e8faa8c97d211f3546/Daymet_Monthly_V4R1/data/")
     
@@ -642,8 +643,8 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
   annMeans <- #future_lapply
     mclapply(X = endDats, #MARGIN = 1,
              FUN = function(x)
-               slidingMetMeans(inDat = climVar[climVar$year %in% c(as.numeric(x-31):(as.numeric(x)-1)),]
-                               , start = as.numeric(x-31), end = as.numeric(x))
+               slidingMetMeans(inDat = climVar[climVar$year %in% c(as.numeric(x-30):(as.numeric(x)-1)),]
+                               , start = as.numeric(x-30), end = as.numeric(x))
     )
   
   # put together into one list
@@ -652,7 +653,7 @@ for (z in 1:length(unique(dayMet_points$sliceID))) {
   names(annMeans_all) <- c(2023)
   annMeans_30yr_temp1 <- lapply(endDats, function(x) {
     temp <- cbind(annMeans_all[[as.character(x)]], x)
-    temp$Start <- x-31
+    temp$Start <- x-30
     names(temp) <- c(names(annMeans_all[[1]]), "End", "Start")
     return(temp)
   })

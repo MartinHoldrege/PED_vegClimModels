@@ -508,8 +508,8 @@ if(runClimateCalcs) {
   annMeans <- #future_lapply
     mclapply(X = endDats, #MARGIN = 1,
              FUN = function(x)
-               slidingMetMeans(inDat = climVar[climVar$year %in% c(as.numeric(x-31):(as.numeric(x)-1)),]
-                               , start = as.numeric(x-31), end = as.numeric(x))
+               slidingMetMeans(inDat = climVar[climVar$year %in% c(as.numeric(x-30):(as.numeric(x)-1)),]
+                               , start = as.numeric(x-30), end = as.numeric(x))
     )
 
   ## for years prior to 2011 and as early as 2000, calculate the average over any previous years (which will be less than 30, as few as 20, but is ok...)
@@ -527,7 +527,7 @@ if(runClimateCalcs) {
   names(annMeans_all) <- c(2011:2024, 2000:2010)
   annMeans_30yr_temp1 <- lapply(endDats, function(x) {
     temp <- cbind(annMeans_all[[as.character(x)]], x)
-    temp$Start <- x-31
+    temp$Start <- x-30
     names(temp) <- c(names(annMeans_all[[1]]), "End", "Start")
     return(temp)
   })
@@ -553,8 +553,8 @@ if(runClimateCalcs) {
   annMeans <-
     mclapply(X = endDats,
              FUN = function(x)
-               slidingMetMeans(inDat = climVar[climVar$year %in% c(as.numeric(x-4):(as.numeric(x)-1)),]
-                               , start = as.numeric(x-4), end = as.numeric(x))
+               slidingMetMeans(inDat = climVar[climVar$year %in% c(as.numeric(x-3):(as.numeric(x)-1)),]
+                               , start = as.numeric(x-3), end = as.numeric(x))
     )
 
   # annMeans <- apply(endDats, MARGIN = 1, FUN = function(x)
@@ -564,7 +564,7 @@ if(runClimateCalcs) {
 
   annMeans_3yr <- lapply(endDats, function(x) {
     temp <- cbind(annMeans[[as.character(x)]], x)
-    temp$Start <- x-4
+    temp$Start <- x-3
     names(temp) <- c(names(annMeans[[1]]), "End", "Start")
     return(temp)
   })
